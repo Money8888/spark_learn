@@ -3,7 +3,7 @@ package com.learn.spark.sparksql
 import org.apache.spark.sql.SparkSession
 
 /**
- * 使用反射生成dataset的字段
+ * 使用反射生成dataFrame的字段
  */
 object sparkSqlReflect {
 

@@ -1,10 +1,13 @@
 package com.learn.spark.sparksql
 
-import org.apache.spark.sql.expressions.Aggregator
-import org.apache.spark.sql.{Encoder, Encoders, SparkSession}
+import org.apache.spark.sql.expressions.{Aggregator, MutableAggregationBuffer, UserDefinedAggregateFunction}
+import org.apache.spark.sql.types.{DataType, DoubleType, LongType, StructField, StructType}
+import org.apache.spark.sql.{Encoder, Encoders, Row, SparkSession}
 
 case class Employee(name: String, salary: Long, age: Long)
 case class Average(var sum: Long, var count: Long)
+
+// 有类型自定义函数
 object MyAverage extends Aggregator[Employee, Average, Double]{
 
   // 初始值
@@ -33,6 +36,43 @@ object MyAverage extends Aggregator[Employee, Average, Double]{
   def outputEncoder: Encoder[Double] = Encoders.scalaDouble
 }
 
+object MyAverageNoType extends UserDefinedAggregateFunction{
+  // 聚合操作输入参数的类型
+  override def inputSchema: StructType = StructType(StructField("InputColumn", LongType) :: Nil)
+  // 聚合操作中间值的类型
+  override def bufferSchema: StructType = {
+    StructType(StructField("sum", LongType) :: StructField("count", LongType) :: Nil)
+  }
+
+  // 聚合操作输出参数的类型
+  override def dataType: DataType = DoubleType
+
+  // 函数是否始终在相同输入上返回相同的输出,通常为 true
+  override def deterministic: Boolean = true
+
+  override def initialize(buffer: MutableAggregationBuffer): Unit = {
+    buffer(0) = 0L
+    buffer(0) = 0L
+  }
+
+  // 同一分区中的 reduce 操作
+  override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
+    if(!input.isNullAt(0)){
+      buffer(0) = buffer.getLong(0) + input.getLong(0)
+      buffer(1) = buffer.getLong(1) + 1
+    }
+  }
+
+  // 不同分区中的 merge 操作
+  override def merge(buffer1: MutableAggregationBuffer, buffer2: Row): Unit = {
+    buffer1(0) = buffer1.getLong(0) + buffer2.getLong(0)
+    buffer1(1) = buffer1.getLong(1) + buffer2.getLong(1)
+  }
+
+  // 计算最终的输出值
+  override def evaluate(buffer: Row): Double = buffer.getLong(0).toDouble / buffer.getLong(1)
+}
+
 object main{
   def main(args: Array[String]): Unit = {
     val spark = SparkSession
@@ -49,5 +89,16 @@ object main{
     val averageSalary = MyAverage.toColumn.name("average_salary")
     val result = ds.select(averageSalary)
     result.show()
+
+    // 用无类型的函数进行计算
+    // 注册函数
+    spark.udf.register("myAverageNoType", MyAverageNoType)
+    // 创建临时表
+    val df = spark.read.json("src/main/resources/emp.json")
+    df.createOrReplaceTempView("emp")
+    val myAvg = spark.sql("SELECT myAverageNoType(sal) as avg_sal FROM emp")
+    val avg = spark.sql("SELECT avg(sal) as avg_sal FROM emp")
+    myAvg.show()
+    avg.show()
   }
 }

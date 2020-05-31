@@ -1,0 +1,11 @@
+Spark Streaming 流处理
+    Spark Streaming 编程的入口类是 StreamingContext
+    Spark 流处理本质是将流数据拆分为一个个批次，然后进行微批处理
+    batchDuration 是批次拆分的时间间隔
+    需至少两个Executor执行
+
+    spark支持的数据流
+        基本数据流:socket,文件系统(比如监听某个HDFS目录，当有新文件产生时将文本内容作为输入流)
+        高级数据流:Kafka，Flume等
+
+    DStream是spark streaming的基本抽象，由一系列连续的 RDD 表示

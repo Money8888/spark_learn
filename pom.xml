@@ -24,6 +24,23 @@
             <artifactId>spark-sql_2.12</artifactId>
             <version>2.4.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming_2.12</artifactId>
+            <version>2.4.3</version>
+        </dependency>
+        <!-- 整合flume依赖-->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming-flume_2.12</artifactId>
+            <version>2.4.3</version>
+        </dependency>
+        <!-- Spark Streaming 整合 Kafka 依赖-->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming-kafka-0-10_2.12</artifactId>
+            <version>2.4.3</version>
+        </dependency>
     </dependencies>
 
 

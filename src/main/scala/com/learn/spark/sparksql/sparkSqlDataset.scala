@@ -24,7 +24,7 @@ object sparkSqlDataset {
     val implicitsDS = Seq(1,2,3).toDS()
     println(implicitsDS.map(_ + 1).collect())
 
-    // 转化成指定的类
+    // 转化成指定的DataSet类
     val peopleDS = spark.read.json("src/main/resources/employees.json").as[Person]
     peopleDS.show()
 
