@@ -1,0 +1,41 @@
+RDD 弹性分布式数据集，是spark最基本的数据抽象
+       只读的，分区的，支持并行操作，可由外部数据集或其他RDD转换而来
+
+   特点：
+       1、由一个或多个分区组成，每个分区由一个计算任务处理，创建时可指定分区个数，未指定时默认采用程序分配核心数
+       2、有一个计算分区的函数compute
+       3、保存和其他RDD的依赖关系，可用于找回丢失分区的数据
+
+   读取数据源转化成RDD：
+       如果在集群环境下从本地文件系统读取数据，则要求该文件必须在集群中所有机器上都存在，且路径相同
+       根据resource的core-site.xml文件的fs.defaultFS来指定读取数据源的路径，没有则从本地读取
+           textFile：其返回格式是 RDD[String] ，返回的是就是文件内容，RDD 中每一个元素对应一行数据；
+           wholeTextFiles：其返回格式是 RDD[(String, String)]，元组中第一个参数是文件路径，第二个参数是文件内容
+
+   操作：
+        transformations (只是转化，相当于惰性求值)
+        action (进行真正的计算)
+
+   缓存：
+        fileRDD.persist(StorageLevel.MEMORY_AND_DISK)
+        fileRDD.cache()
+        Spark 会自动监视每个节点上的缓存使用情况，并按照最近最少使用（LRU）的规则删除旧数据分区
+
+   shuffle:
+        Spark 从所有分区读取数据，并查找所有键的所有值，然后汇总在一起以计算每个键的最终结果称为 Shuffle
+        跨节点传输，涉及磁盘 I/O，网络 I/O，和数据序列化
+        涉及到重新分区操作： 如 repartition 和 coalesce；
+        所有涉及到 ByKey 的操作：如 groupByKey 和 reduceByKey，但 countByKey 除外；
+        联结操作：如 cogroup 和 join
+
+   作业提交
+   spark-submit \
+     --class <main-class> \        # 应用程序主入口类
+     --master <master-url> \       # 集群的 Master Url
+     --deploy-mode <deploy-mode> \ # 部署模式
+     --conf <key>=<value> \        # 可选配置
+     ... # other options
+     <application-jar> \           # Jar 包路径
+     [application-arguments]       #传递给主入口类的参数
+   在集群环境下，application-jar 必须能被集群中所有节点都能访问，可以是 HDFS 上的路径；
+   也可以是本地文件系统路径，如果是本地文件系统路径，则要求集群中每一个机器节点上的相同路径都存在该 Jar 包
